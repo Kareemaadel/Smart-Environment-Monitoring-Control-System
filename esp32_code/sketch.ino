@@ -27,13 +27,16 @@ Servo servo;
 #define ECHO_PIN 18
 #define SERVO_PIN 19
 #define RELAY_PIN 26
-#define LED_PIN 2
+#define RED_LED_PIN 2
+#define YELLOW_LED_PIN 16
+#define GREEN_LED_PIN 17
 
 /* ---------------- THRESHOLDS ---------------- */
 
 float TEMP_THRESHOLD = 30;
 int LIGHT_THRESHOLD = 500;
 int DIST_THRESHOLD = 20;
+
 
 unsigned long publishInterval = 2000;
 
@@ -51,17 +54,56 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   if (String(topic) == PREFIX + "/actuators/led") {
 
-    if (msg.indexOf("on") > 0)
-      digitalWrite(LED_PIN, HIGH);
-    else
-      digitalWrite(LED_PIN, LOW);
+    if (msg.indexOf("red") >= 0) {
+
+      if (msg.indexOf("\"state\":\"on\"") >= 0)
+        digitalWrite(RED_LED_PIN, HIGH);
+      else if (msg.indexOf("\"state\":\"off\"") >= 0)
+        digitalWrite(RED_LED_PIN, LOW);
+
+    }
+
+    else if (msg.indexOf("yellow") >= 0) {
+
+      if (msg.indexOf("\"state\":\"on\"") >= 0)
+        digitalWrite(YELLOW_LED_PIN, HIGH);
+      else if (msg.indexOf("\"state\":\"off\"") >= 0)
+        digitalWrite(YELLOW_LED_PIN, LOW);
+
+    }
+
+    else if (msg.indexOf("green") >= 0) {
+
+      if (msg.indexOf("\"state\":\"on\"") >= 0)
+        digitalWrite(GREEN_LED_PIN, HIGH);
+      else if (msg.indexOf("\"state\":\"off\"") >= 0)
+        digitalWrite(GREEN_LED_PIN, LOW);
+
+    }
+
   }
 
   if (String(topic) == PREFIX + "/actuators/buzzer") {
 
-    digitalWrite(BUZZER_PIN, HIGH);
-    delay(2000);
-    digitalWrite(BUZZER_PIN, LOW);
+    if (msg.indexOf("\"state\":\"on\"") >= 0) {
+
+      int duration = 2000; // default
+
+      if (msg.indexOf("duration") >= 0) {
+        duration = msg.substring(msg.indexOf("duration") + 9).toInt();
+      }
+
+      digitalWrite(BUZZER_PIN, HIGH);
+      delay(duration);
+      digitalWrite(BUZZER_PIN, LOW);
+
+    }
+
+    else if (msg.indexOf("\"state\":\"off\"") >= 0) {
+
+      digitalWrite(BUZZER_PIN, LOW);
+
+    }
   }
 
   if (String(topic) == PREFIX + "/actuators/servo") {
@@ -82,13 +124,13 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   if (String(topic) == PREFIX + "/config/thresholds") {
 
-    if (msg.indexOf("temp_max") > 0)
+    if (msg.indexOf("temp_max") >= 0)
       TEMP_THRESHOLD = msg.substring(msg.indexOf("temp_max") + 9).toFloat();
 
-    if (msg.indexOf("light_min") > 0)
+    if (msg.indexOf("light_min") >= 0)
       LIGHT_THRESHOLD = msg.substring(msg.indexOf("light_min") + 10).toInt();
 
-    if (msg.indexOf("dist_min") > 0)
+    if (msg.indexOf("dist_min") >= 0)
       DIST_THRESHOLD = msg.substring(msg.indexOf("dist_min") + 9).toInt();
 
     Serial.println("Thresholds updated from dashboard");
@@ -170,7 +212,9 @@ void setup() {
 
   Serial.begin(115200);
 
-  pinMode(LED_PIN, OUTPUT);
+  pinMode(RED_LED_PIN, OUTPUT);
+  pinMode(YELLOW_LED_PIN, OUTPUT);
+  pinMode(GREEN_LED_PIN, OUTPUT);
   pinMode(PIR_PIN, INPUT);
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(RELAY_PIN, OUTPUT);
@@ -232,18 +276,19 @@ void loop() {
     Serial.println(" cm");
 
     /* ---------- AUTOMATIC CONTROL ---------- */
+    /* ---------- TEMPERATURE CONTROL (RELAY ONLY) ---------- */
 
     if (temperature > TEMP_THRESHOLD) {
 
       digitalWrite(RELAY_PIN, HIGH);
-      digitalWrite(LED_PIN, HIGH);
-
       Serial.println("HIGH TEMPERATURE -> RELAY ON");
 
     } else {
 
       digitalWrite(RELAY_PIN, LOW);
     }
+
+    /* ---------- BUZZER (MOTION) ---------- */
 
     if (motion) {
 
@@ -252,8 +297,31 @@ void loop() {
       digitalWrite(BUZZER_PIN, LOW);
     }
 
-    // if (light < LIGHT_THRESHOLD)
-    //   digitalWrite(LED_PIN, HIGH);
+    /* ---------- LED STATUS ---------- */
+
+    if (temperature > TEMP_THRESHOLD) {
+
+      digitalWrite(RED_LED_PIN, HIGH);
+      digitalWrite(YELLOW_LED_PIN, LOW);
+      digitalWrite(GREEN_LED_PIN, LOW);
+
+    }
+
+    else if (light < LIGHT_THRESHOLD) {
+
+      digitalWrite(RED_LED_PIN, LOW);
+      digitalWrite(YELLOW_LED_PIN, HIGH);
+      digitalWrite(GREEN_LED_PIN, LOW);
+
+    }
+
+    else {
+
+      digitalWrite(RED_LED_PIN, LOW);
+      digitalWrite(YELLOW_LED_PIN, LOW);
+      digitalWrite(GREEN_LED_PIN, HIGH);
+
+    }
 
     if (distance < DIST_THRESHOLD)
       servo.write(90);
