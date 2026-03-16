@@ -1,0 +1,22 @@
+[
+    {
+        "id": "7ca63d346a273b06",
+        "type": "function",
+        "z": "41df7418098b415f",
+        "name": "function 12",
+        "func": "let history = flow.get(\"sensor_table\") || [];\n\nlet hours = flow.get('filter_time') || 1;\nlet cutoff = Date.now() - hours * 3600000;\n\nlet filtered = history.filter(r => r.time > cutoff);\n\nfiltered.forEach(r => {\n    node.send({\n        topic: r.sensor,\n        payload: r.value\n    });\n});\n\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1190,
+        "y": 1460,
+        "wires": [
+            [
+                "e7711c66c028e6a5"
+            ]
+        ]
+    }
+]
