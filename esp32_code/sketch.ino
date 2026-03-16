@@ -56,27 +56,27 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
     if (msg.indexOf("red") >= 0) {
 
-      if (msg.indexOf("\"state\":\"on\"") >= 0)
+      if (msg.indexOf("on") >= 0)
         digitalWrite(RED_LED_PIN, HIGH);
-      else if (msg.indexOf("\"state\":\"off\"") >= 0)
+      else if (msg.indexOf("off") >= 0)
         digitalWrite(RED_LED_PIN, LOW);
 
     }
 
     else if (msg.indexOf("yellow") >= 0) {
 
-      if (msg.indexOf("\"state\":\"on\"") >= 0)
+      if (msg.indexOf("on") >= 0)
         digitalWrite(YELLOW_LED_PIN, HIGH);
-      else if (msg.indexOf("\"state\":\"off\"") >= 0)
+      else if (msg.indexOf("off") >= 0)
         digitalWrite(YELLOW_LED_PIN, LOW);
 
     }
 
     else if (msg.indexOf("green") >= 0) {
 
-      if (msg.indexOf("\"state\":\"on\"") >= 0)
+      if (msg.indexOf("on") >= 0)
         digitalWrite(GREEN_LED_PIN, HIGH);
-      else if (msg.indexOf("\"state\":\"off\"") >= 0)
+      else if (msg.indexOf("off") >= 0)
         digitalWrite(GREEN_LED_PIN, LOW);
 
     }
@@ -85,7 +85,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   if (String(topic) == PREFIX + "/actuators/buzzer") {
 
-    if (msg.indexOf("\"state\":\"on\"") >= 0) {
+    if (msg.indexOf("on") >= 0) {
 
       int duration = 2000; // default
 
@@ -99,7 +99,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
     }
 
-    else if (msg.indexOf("\"state\":\"off\"") >= 0) {
+    else if (msg.indexOf("off") >= 0) {
 
       digitalWrite(BUZZER_PIN, LOW);
 
@@ -302,26 +302,22 @@ void loop() {
     if (temperature > TEMP_THRESHOLD) {
 
       digitalWrite(RED_LED_PIN, HIGH);
-      digitalWrite(YELLOW_LED_PIN, LOW);
-      digitalWrite(GREEN_LED_PIN, LOW);
 
     }
-
-    else if (light < LIGHT_THRESHOLD) {
-
-      digitalWrite(RED_LED_PIN, LOW);
-      digitalWrite(YELLOW_LED_PIN, HIGH);
-      digitalWrite(GREEN_LED_PIN, LOW);
-
-    }
-
     else {
 
       digitalWrite(RED_LED_PIN, LOW);
-      digitalWrite(YELLOW_LED_PIN, LOW);
-      digitalWrite(GREEN_LED_PIN, HIGH);
 
     }
+    
+    if (light < LIGHT_THRESHOLD) {
+
+      digitalWrite(YELLOW_LED_PIN, HIGH);
+    
+    }
+    else digitalWrite(YELLOW_LED_PIN, LOW);
+
+
 
     if (distance < DIST_THRESHOLD)
       servo.write(90);
@@ -352,10 +348,14 @@ void loop() {
     lastHeartbeat = millis();
 
     String status = "{\"uptime\":" + String(millis()/1000) +
-                    ",\"rssi\":" + String(WiFi.RSSI()) + "}";
+                    ",\"rssi\":" + String(WiFi.RSSI()) +
+                    ",\"free_heap\":" + String(ESP.getFreeHeap()) +
+                    "}";
 
     client.publish((PREFIX + "/system/status").c_str(), status.c_str());
 
     Serial.println("Heartbeat sent");
   }
+
+    
 }
